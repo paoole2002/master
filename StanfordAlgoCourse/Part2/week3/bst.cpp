@@ -188,7 +188,9 @@ int main()
     tree.insert(70);
     tree.insert(60);
     tree.insert(80);
-    tree.rightRotate(50);
+    // tree.rightRotate(50);
+    tree.printInorder();
+    tree.erase(50);
     tree.printInorder();
     return 0;
 }
