@@ -4,20 +4,21 @@
 #include <sstream>
 #include <vector>
 #include <unordered_map>
+#include <limits>
 #define print(x)  std::cout<<x<<std::endl;
 using namespace std;
 
 struct StringMathcer{
     unordered_map<char,vector<string>> dict;
     unordered_map<string,int> memo; string target;
-    int dfs(int idx,int cnt){
+    int dfs(int idx){
         if(idx >= target.size()){
             return -1;
         }
         if(memo.count(to_string(idx)) > 0){
             return memo[to_string(idx)];
         }
-        int ans = 1e7;
+        int ans = numeric_limits<int>::max(); // better use max int
         for(auto i = 0; i < dict[target[idx]].size(); i++){
             string num = dict[target[idx]][i];
             int j = 0; int k = idx; bool found = true; int curSize = num.size();
@@ -25,8 +26,8 @@ struct StringMathcer{
             while(j < num.size()){
                 if(num[j++] != target[k++]){ found = false; break; }
             }
-            if(found){
-                int spaces = dfs(idx + curSize,++cnt);
+            if(found){ // if prefix was found recurse with the new index advanced by the word length
+                int spaces = dfs(idx + curSize);
                 ans = min(ans,spaces+1);
             }
         }
@@ -38,7 +39,7 @@ struct StringMathcer{
         for(const auto & word : numbers){
             dict[word[0]].push_back(word);
         }
-        print(dfs(0, 0));
+        print(dfs(0));
         return 0;
     }
 };
