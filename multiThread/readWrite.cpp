@@ -3,32 +3,46 @@
 #include <mutex>
 #include <array>
 #include <condition_variable>
+#include <sstream>
 
 using namespace std;
 
-bool ready = true;
+bool ended = false;
 
-void read(condition_variable& cvRead, condition_variable& cvWrite, array<int,100>& arr, int idx) {
-  while (idx < 100) {
-    std::mutex m;
-    std::unique_lock<std::mutex> lk(m);
-    cvRead.wait(lk, []{ return !ready; });
-    cout << "Reading data at idx " << idx << " is " << arr[idx] << endl;
-    idx++;
-    ready = true;
-    lk.unlock();
+static int fullSlots = 0;
+static int emptySlots = 8;
+static int iterations = 10;
+
+void read(condition_variable& cvRead, condition_variable& cvWrite, array<int,8>& arr) {
+  int cnt = 0;
+  while(cnt < (int)arr.size() * iterations) {
+    mutex m;
+    unique_lock<mutex> lk(m);
+    cvRead.wait(lk, []{return fullSlots > 0; });
+
+    stringstream ss; ss << "read value " << arr.at(cnt % arr.size());
+    cout << ss.str() << endl;
+    emptySlots++;
+
+    fullSlots--;
     cvWrite.notify_one();
+    cnt++;
   }
 }
-void write(condition_variable& cvRead, condition_variable& cvWrite, std::array<int,100>& arr, int idx) {
-  while(idx < 100) {
-    std::mutex m;
-    std::unique_lock<std::mutex> lk(m);
-    cvWrite.wait(lk, []{ return ready; });
-    ready = false;
-    arr[idx++] = idx + 2;
-    lk.unlock();
+
+void write(condition_variable& cvRead, condition_variable& cvWrite, array<int,8>& arr) {
+  int cnt = 0;
+  while(cnt < (int)arr.size() * iterations) {
+    mutex m;
+    unique_lock<mutex> lk(m);
+    cvWrite.wait(lk, []{return fullSlots < 8; });
+    fullSlots++;
+    emptySlots--;
+
+    arr[cnt % arr.size()] = cnt;
+
     cvRead.notify_one();
+    cnt++;
   }
 }
 
@@ -42,10 +56,10 @@ private:
   mutex mWriteLock;
   condition_variable mCvRead;
   condition_variable mCvWrite;
-  std::array<int,100> mArr;
+  std::array<int,8> mArr;
   void startThreads() {
-    thread t1 = thread(read, ref(mCvRead), ref(mCvWrite), ref(mArr), 0);
-    thread t2 = thread(write, ref(mCvRead), ref(mCvWrite), ref(mArr), 0);
+    thread t1 = thread(read, ref(mCvRead), ref(mCvWrite), ref(mArr));
+    thread t2 = thread(write, ref(mCvRead), ref(mCvWrite), ref(mArr));
     t1.join();
     t2.join();
   }

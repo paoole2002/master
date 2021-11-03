@@ -1,10 +1,10 @@
-#include "rapidjson/include/rapidjson/document.h"
-#include "rapidjson/include/rapidjson/writer.h"
-#include "rapidjson/include/rapidjson/stringbuffer.h"
-#include "rapidjson/include/rapidjson/pointer.h"
-#include "rapidjson/include/rapidjson/prettywriter.h"
-#include "rapidjson/include/rapidjson/filewritestream.h"
-#include "rapidjson/include/rapidjson/filereadstream.h"
+#include "include/rapidjson/document.h"
+#include "include/rapidjson/writer.h"
+#include "include/rapidjson/stringbuffer.h"
+#include "include/rapidjson/pointer.h"
+#include "include/rapidjson/prettywriter.h"
+#include "include/rapidjson/filewritestream.h"
+#include "include/rapidjson/filereadstream.h"
 #include "iostream"
 #include <vector>
 #include <cassert>
@@ -16,9 +16,9 @@ using namespace std;
 using namespace rapidjson;
 
 struct Point{
-  int mX = 1; int mY = 1; int mZ = 1;
+  int mX = 1; int mY = 1; double mZ = 1.;
   Point() = default;
-  Point(int x, int y, int z) : mX(x), mY(y), mZ(z) {}
+  Point(int x, int y, double z) : mX(x), mY(y), mZ(z) {}
 
   void toJSON(Writer<StringBuffer>& writer) const {
     writer.StartObject();
@@ -27,14 +27,14 @@ struct Point{
       writer.Key("y");
       writer.Int(mY);
       writer.Key("z");
-      writer.Int(mZ);
+      writer.Double(mZ);
     writer.EndObject();
   }
 
   void fromJSON(const Value& val) {
     mX = val["x"].GetInt();
     mY = val["y"].GetInt();
-    mZ = val["z"].GetInt();
+    mZ = val["z"].GetDouble();
   }
 };
 
@@ -64,7 +64,7 @@ int main(){
   // Initialize a vector of points
   vector<Point> vec;
   for(int i = 0; i < 3; i++){
-    vec.emplace_back(i, i + 2, i + 5);
+    vec.emplace_back(i, i + 2, i * 1. + 0.053246781344);
   }
 
   // initialze and fill a vector of Dots
@@ -123,6 +123,8 @@ int main(){
   const Value& system = d1["system"];
   const Value& points = system["points"];
 
+  cout << points.GetArray().Size() << endl;
+
   int idx = 0;
   for(const auto& pt : points.GetArray()) {
     vec[idx++].fromJSON(pt);
@@ -130,7 +132,8 @@ int main(){
 
   // Make sure we deserialized correctly
   for(const auto& pt : vec){
-    // cout << pt.mX << ", " << pt.mY << ", " <<  pt.mZ << endl;
+    cout << setprecision(12);
+    cout << pt.mX << ", " << pt.mY << ", " <<  pt.mZ << endl;
   }
   return 0;
 }
