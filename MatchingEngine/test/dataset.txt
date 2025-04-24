@@ -9,3 +9,4 @@ BADMESSAGE // An erroneous input
 1,1000004 // remove order
 0,1000007,1,5,1025 // Original standing order book from Details
 0,1000008,0,3,1050 // Matches! Triggers trades
+test
